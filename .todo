@@ -1,5 +1,0 @@
-// Remove the id dialog from the client component because as of now use we don't have any use case for it.
-// Remove the bar only which displays the id and rather show the host id instead in the connections dialog box.
-// Similarly in the server component no need to remove the id because it is crucial to share the workspace
-// In server component show the connected clients with their respective ids. from the line 17 array in page.js from app/editor/host/page.js
-

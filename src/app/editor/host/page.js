@@ -1,5 +1,4 @@
 'use client';
-import { Editor } from "@monaco-editor/react";
 import Peer from "peerjs";
 import { useEffect,useState,useRef } from "react";
 import { useSearchParams } from "next/navigation";
@@ -15,7 +14,8 @@ export default function EditorPage()
     const [peerId, setPeerId] = useState(''); //Your Peer Id
     const peerRef = useRef(null); //This is your own peer 
     const [connections, setConnections] = useState([]); //All clients
-    const [code, setCode] = useState(''); //For storing actual written code..
+    const [messages, setMessages] = useState([]); // chat messages
+    const [input, setInput] = useState('');
     
     useEffect(() => 
     {
@@ -37,9 +37,11 @@ export default function EditorPage()
     function setUpHostPeer()
     {
         const workspaceNameParam = searchParams.get('name');
-        workspaceNameParam && setWorkspaceName(workspaceNameParam);
+        const idToUse = workspaceNameParam || workspaceName;
+        if (workspaceNameParam) setWorkspaceName(workspaceNameParam);
 
-        const peer = new Peer();
+        // Use the URL-provided name as the Peer id when available so host id matches the workspace name
+        const peer = new Peer(idToUse);
         peerRef.current = peer;
 
         peer.on('open', (id) => 
@@ -53,8 +55,16 @@ export default function EditorPage()
             console.log('New connection from:', conn.peer);
 
             const messageToSend = getMessage();
-            setConnections((prev) => [...prev, conn]);
-            connections.forEach((con) => con.send(messageToSend));
+
+            // Send current code to the newly connected peer and to all existing connections.
+            try { conn.send(messageToSend); } catch (e) { /* ignore send errors */ }
+
+            setConnections((prev) => {
+                prev.forEach((c) => {
+                    try { c.send(messageToSend); } catch (e) { /* ignore send errors */ }
+                });
+                return [...prev, conn];
+            });
 
             conn.on('data', (data) =>
             {
@@ -66,20 +76,15 @@ export default function EditorPage()
 
     function getMessage()
     {
-        const message = 
-        {
-            type: 'code',
-            content: code
-        }
-
-        return message;
+        return { type: 'chat' };
     }
 
     function handleReceivedData(data)
     {
-        if(data.type === 'code')
+        if(data.type === 'chat')
         {
-            setCode(data.content);
+            const content = data.content || {};
+            setMessages(prev => [...prev, { sender: content.sender || 'peer',from: 'client',  text: content.text || String(content) }]);
         }
 
         //can add other types of message and their respective action
@@ -92,19 +97,37 @@ export default function EditorPage()
 
     function handleCodeSync(value)
     {
-        setCode(value);
-        const messageToSend = getMessage();
+        // Host sending chat messages
+        const text = value;
+        const message = { type: 'chat', content: { sender: peerId || 'host', from: 'host',  text } };
+        setMessages(prev => [...prev, { sender: message.content.sender, from: 'host', text }]);
+        connections.forEach((con) => {
+            try { con.send(message); } catch (e) { }
+        });
 
-        connections.forEach((con) => con.send(messageToSend));
+        console.log(messages);
     }
 
     return (
         <div className="w-full h-[100vh] overflow-hidden">
             <EditorNavbar workspaceName={workspaceName} peerId={peerId}/>
             <div className="w-full h-full flex">
-                <Sidebar/>
-                <div className="w-full bg-amber-400 h-full">
-                    <Editor height='100vh' width='100%' defaultLanguage='javascript' value={code} onChange={(v) => handleCodeSync(v)} theme='vs-dark'/>
+                <div className="w-full bg-background-muted-dark h-full flex flex-col">
+                    <div className="flex-1 overflow-auto p-4 space-y-3" id="messages">
+                        {messages.length === 0 && <div className="text-muted text-center">No messages yet — say hello 👋</div>}
+                        {messages.map((m, i) => (
+                            <div key={i} className={`w-full flex ${m.from === 'host' ? 'justify-end' : 'justify-start'}`}>
+                                <div className={`max-w-md px-3 py-2 rounded-md ${m.from === 'client' ? 'bg-background-dark text-muted' : 'from-amber-500 to-amber-600 bg-gradient-to-r text-black'} `}>
+                                    <div className="text-sm opacity-80">{m.sender}</div>
+                                    <div className="font-medium">{m.text}</div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                    <div className="p-3 bg-background-muted-dark flex gap-2 mb-12">
+                        <input value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => { if(e.key === 'Enter'){ handleCodeSync(input); setInput(''); } }} className="flex-1 bg-background-dark rounded px-3 py-2 text-muted outline-none" placeholder="Type a message..." />
+                        <button onClick={() => { handleCodeSync(input); setInput(''); }} className="bg-amber-600 hover:bg-orange-600 text-white px-4 py-2 rounded">Send</button>
+                    </div>
                 </div>
             </div>
         </div>

@@ -1,5 +1,4 @@
 'use client';
-import { Editor } from "@monaco-editor/react";
 import Peer from "peerjs";
 import { useEffect,useState,useRef } from "react";
 import { useSearchParams } from "next/navigation";
@@ -15,8 +14,9 @@ export default function EditorPage()
     const [idToConnect, setIdToConnect] = useState('');
     const [peerId, setPeerId] = useState('');
 
-    //Editor Workspace
-    const [code, setCode] = useState(''); //For storing actual written code..
+    // Chat Workspace
+    const [messages, setMessages] = useState([]);
+    const [input, setInput] = useState('');
     const connectionRef = useRef(null);
 
     useEffect(() => 
@@ -24,9 +24,10 @@ export default function EditorPage()
         if(peerRef.current === null)
         {
             const idToConnectParam = searchParams.get('id');
+            const idToUse = searchParams.get('name') || workspaceName;
             idToConnectParam && setIdToConnect(idToConnectParam);
 
-            const peer = new Peer();
+            const peer = new Peer(idToUse);
             peerRef.current = peer;
 
             peer.on('open', (id) => 
@@ -66,29 +67,19 @@ export default function EditorPage()
 
     function handleReceivedData(data)
     {
-        if(data.type === 'code')
+        if(data.type === 'chat')
         {
-            setCode(data.content);
+            const content = data.content || {};
+            setMessages(prev => [...prev, { sender: content.sender || 'host', from: 'host', text: content.text || String(content) }]);
         }
     }
-
-    function getMessage()
+    function sendMessage(text)
     {
-        const message = 
-        {
-            type: 'code',
-            content: code
-        }
-
-        return message;
-    }
-
-    function handleCodeSync(value)
-    {
-        setCode(value);
+        const message = { type: 'chat', content: { sender: peerId || 'client', from: 'client', text } };
+        setMessages(prev => [...prev, { sender: message.content.sender, text }]);
         if(connectionRef.current)
         {
-            connectionRef.current.send(getMessage());
+            try { connectionRef.current.send(message); } catch (e) { }
         }
     }
 
@@ -96,9 +87,22 @@ export default function EditorPage()
         <div className="w-full h-[100vh] overflow-hidden">
             <EditorNavbar workspaceName={workspaceName} peerId={peerId}/>
             <div className="w-full h-full flex">
-                <Sidebar/>
-                <div className="w-full bg-amber-400 h-full">
-                    <Editor height='100vh' width='100%' defaultLanguage='javascript' value={code} onChange={(v) => handleCodeSync(v)} theme='vs-dark'/>
+                <div className="w-full bg-background-muted-dark h-full flex flex-col">
+                    <div className="flex-1 overflow-auto p-4 space-y-3" id="messages">
+                        {messages.length === 0 && <div className="text-muted text-center">No messages yet — say hello 👋</div>}
+                        {messages.map((m, i) => (
+                            <div key={i} className={`w-full flex ${m.from === 'host' ? 'justify-start' : 'justify-end'}`}>
+                                <div className={`max-w-md px-3 py-2 rounded-md ${m.from === 'host' ? 'bg-background-dark text-muted' : 'from-amber-500 to-amber-600 bg-gradient-to-r text-black'} `}>
+                                    <div className="text-sm opacity-80">{m.sender}</div>
+                                    <div className="font-medium">{m.text}</div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                    <div className="p-3 bg-background-muted-dark mb-12 flex gap-2">
+                        <input value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => { if(e.key === 'Enter'){ sendMessage(input); setInput(''); } }} className="flex-1 bg-background-dark rounded px-3 py-2 text-muted outline-none" placeholder="Type a message..." />
+                        <button onClick={() => { sendMessage(input); setInput(''); }} className="bg-amber-600 hover:bg-orange-600 text-white px-4 py-2 rounded">Send</button>
+                    </div>
                 </div>
             </div>
         </div>
