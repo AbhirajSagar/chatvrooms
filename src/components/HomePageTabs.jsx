@@ -15,8 +15,8 @@ const TABS =
     content: <JoinWorkSpace/>
   },
   {
-    name: "Random Chat",
-    content: <RandomChat/>
+    name: "About",
+    content: <About/>
   }
 ]
 
@@ -65,32 +65,16 @@ function JoinWorkSpace()
     )
 }
 
-function RandomChat()
+function About()
 {
-  const router = useRouter();
-  const [workspaceName, setWorkspaceName] = useState(null);
-  const [message, setMessage] = useState();
-
-
-  async function handleRandomConnect(e)
-  {
-    e.preventDefault();
-    const response = await fetch('/api/waiting');
-    if(!response.ok) return setMessage({message: 'Error connecting to server', type: 'error'});
-    const ids = await response.json();
-    console.log(ids);
-    launchWorkSpace(router,workspaceName);
-  }
-
-  return (
-    <div className="p-4">
-      <h2 className="text-xl text-muted font-bold mb-4">Create New Chatroom</h2>
-      <form onSubmit={handleRandomConnect}>
-        <input type="text" placeholder="Chatroom Name" className="border p-2 rounded text-muted focus:outline-1 focus:outline-orange-300 w-full mb-3" onChange={(e) => setWorkspaceName(e.target.value)} required/>
-        <input type="submit" value="Create " className="dark:bg-background-dark bg-muted text-white mb-4 cursor-pointer dark:text-muted px-4 py-2 rounded float-right duration-300 transition-colors hover:bg-orange-500 hover:text-white"/>
-      </form>
-    </div>
-  )
+    return (
+      <div className="p-4">
+        <h2 className="text-xl text-muted font-bold mb-4">About Chatvroom</h2>
+        <p className="text-muted">
+          Chatvrooms is an anonymous chatroom platform that allows users to create and join chatrooms without the need for registration. Simply create a chatroom with a name, share the name with others, and start chatting! Enjoy real-time conversations in a simple and user-friendly interface.
+        </p>
+      </div>
+    )
 }
 
 function launchWorkSpace(router, workspaceName) 

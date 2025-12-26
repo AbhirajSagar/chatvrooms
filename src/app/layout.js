@@ -15,7 +15,7 @@ const outfit = Outfit({
 
 export const metadata = {
   title: "Chatvroom",
-  description: "Realtime Collaborative Coding Platform",
+  description: "Anonymous Chatrooms",
 };
 
 export default function RootLayout({ children }) 
