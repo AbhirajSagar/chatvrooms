@@ -14,7 +14,7 @@ const outfit = Outfit({
 })
 
 export const metadata = {
-  title: "Code Collab",
+  title: "Chatvroom",
   description: "Realtime Collaborative Coding Platform",
 };
 

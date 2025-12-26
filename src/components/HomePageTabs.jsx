@@ -7,12 +7,16 @@ import { useState } from "react";
 const TABS = 
 [
   {
-    name: "Create",
+    name: "Create Chatroom",
     content: <CreateWorkSpace/>
   },
   {
-    name: "Join",
+    name: "Join Chatroom",
     content: <JoinWorkSpace/>
+  },
+  {
+    name: "Random Chat",
+    content: <RandomChat/>
   }
 ]
 
@@ -26,13 +30,13 @@ function CreateWorkSpace()
 
     return (
       <div className="p-4">
-        <h2 className="text-xl text-muted font-bold mb-4">Create New</h2>
+        <h2 className="text-xl text-muted font-bold mb-4">Create New Chatroom</h2>
         <form onSubmit={(e) => 
         {
           e.preventDefault();
           launchWorkSpace(router,workspaceName);
         }}>
-          <input type="text" placeholder="Name" className="border p-2 rounded text-muted focus:outline-1 focus:outline-orange-300 w-full mb-3" onChange={(e) => setWorkspaceName(e.target.value)} required/>
+          <input type="text" placeholder="Chatroom Name" className="border p-2 rounded text-muted focus:outline-1 focus:outline-orange-300 w-full mb-3" onChange={(e) => setWorkspaceName(e.target.value)} required/>
           <input type="submit" value="Create " className="dark:bg-background-dark bg-muted text-white mb-4 cursor-pointer dark:text-muted px-4 py-2 rounded float-right duration-300 transition-colors hover:bg-orange-500 hover:text-white"/>
         </form>
       </div>
@@ -47,18 +51,46 @@ function JoinWorkSpace()
 
     return (
       <div className="p-4">
-        <h2 className="text-xl text-muted font-bold mb-4">Join</h2>
+        <h2 className="text-xl text-muted font-bold mb-4">Join Chatroom</h2>
         <form onSubmit={(e) => 
           {
             e.preventDefault();
             joinWorkSpace(router, workspaceId, name);
           }}>
-          <input type="text" placeholder="To Join" onChange={(e) => setWorkspaceId(e.target.value)} className="border p-2 rounded text-muted focus:outline-1 focus:outline-orange-300 w-full mb-3" required/>
+          <input type="text" placeholder="Chatroom Name to Join" onChange={(e) => setWorkspaceId(e.target.value)} className="border p-2 rounded text-muted focus:outline-1 focus:outline-orange-300 w-full mb-3" required/>
           <input type="text" placeholder="Your Name" onChange={(e) => setName(e.target.value)} className="border p-2 rounded text-muted focus:outline-1 focus:outline-orange-300 w-full mb-3" required/>
           <input type="submit" value="Join " className="dark:bg-background-dark bg-muted text-white mb-4 cursor-pointer dark:text-muted px-4 py-2 rounded float-right duration-300 transition-colors hover:bg-orange-500 hover:text-white"/>
         </form>
       </div>
     )
+}
+
+function RandomChat()
+{
+  const router = useRouter();
+  const [workspaceName, setWorkspaceName] = useState(null);
+  const [message, setMessage] = useState();
+
+
+  async function handleRandomConnect(e)
+  {
+    e.preventDefault();
+    const response = await fetch('/api/waiting');
+    if(!response.ok) return setMessage({message: 'Error connecting to server', type: 'error'});
+    const ids = await response.json();
+    console.log(ids);
+    launchWorkSpace(router,workspaceName);
+  }
+
+  return (
+    <div className="p-4">
+      <h2 className="text-xl text-muted font-bold mb-4">Create New Chatroom</h2>
+      <form onSubmit={handleRandomConnect}>
+        <input type="text" placeholder="Chatroom Name" className="border p-2 rounded text-muted focus:outline-1 focus:outline-orange-300 w-full mb-3" onChange={(e) => setWorkspaceName(e.target.value)} required/>
+        <input type="submit" value="Create " className="dark:bg-background-dark bg-muted text-white mb-4 cursor-pointer dark:text-muted px-4 py-2 rounded float-right duration-300 transition-colors hover:bg-orange-500 hover:text-white"/>
+      </form>
+    </div>
+  )
 }
 
 function launchWorkSpace(router, workspaceName) 

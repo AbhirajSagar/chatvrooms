@@ -12,7 +12,7 @@ export default function ClientLoader({ children })
   useEffect(() =>
   {
     // Adding a delay before setting isLoading false, later can be used to load up resources too..
-    const delay = process.env.NEXT_PUBLIC_FAKE_LOADING === 'true' ? 2000 : 0;
+    const delay = process.env.NEXT_PUBLIC_FAKE_LOADING === 'true' ? 3000 : 0;
     const timer = setTimeout(() => setIsLoading(false), delay);
     
     //Clearing setTimeout
